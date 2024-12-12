@@ -1,0 +1,25 @@
+# Default settings - DO NOT MODIFY
+# Copy this file to settings.local.yaml and modify your personal settings there
+
+# The path where your download client places new TV show downloads
+# This should match the path configured in NZBGet for Series category
+UNORGANIZED_TV_SHOWS_PATH: "/path/to/TV Shows - Unorganized"
+# The path where your organized TV shows should be stored
+# This should match the TV Shows library path in your Emby media server
+MEDIA_LIBRARY_TV_SHOWS_PATH: "/path/to/TV Shows"
+
+# Get your API key from nzbgeek.info
+NZBGEEK_API_KEY: ""
+
+NZBGET_URL: "http://localhost:6789/jsonrpc"
+NZBGET_USERNAME: "nzbget"
+NZBGET_PASSWORD: "tegbzn6789"
+
+# Video Quality Settings
+RESOLUTIONS:
+  - "1080p"
+
+# Get from trakt.tv/oauth/applications
+TRAKT_CLIENT_ID: ""
+# Generate using Trakt OAuth
+TRAKT_ACCESS_TOKEN: ""
