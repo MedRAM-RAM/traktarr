@@ -21,5 +21,6 @@ RESOLUTIONS:
 
 # Get from trakt.tv/oauth/applications
 TRAKT_CLIENT_ID: ""
-# Generate using Trakt OAuth
+TRAKT_CLIENT_SECRET: ""
+# Generate using src/trakt_authorizer.py
 TRAKT_ACCESS_TOKEN: ""
