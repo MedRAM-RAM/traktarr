@@ -22,7 +22,8 @@ A lightweight, Trakt-based media automation solution designed to run on Android 
    - Install from [website](https://emby.media/server-android.html)
    - Launch and follow initial setup
    - Add your media folders (e.g., /storage/emulated/0/TV Shows)
-   - Create admin account
+   - Do not check `Save artwork into media folders`
+   - Create user account
 
 2. Install Termux from [Play Store](https://play.google.com/store/apps/details?id=com.termux)
    
