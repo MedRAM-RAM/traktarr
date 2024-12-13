@@ -248,7 +248,7 @@ if __name__ == "__main__":
                         if is_valid_nzb(show_name, nzb_title):
                             print(f"Valid NZB found: {nzb_title}")
                             nzb_content = requests.get(nzb_data["nzb_url"]).content
-                            # send_to_nzbget(nzb_title + ".nzb", nzb_content)
+                            send_to_nzbget(nzb_title + ".nzb", nzb_content)
                             valid_found = True
                             break
 
