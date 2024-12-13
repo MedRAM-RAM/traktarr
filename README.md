@@ -13,106 +13,116 @@ A lightweight, Trakt-based media automation solution designed to run on Android 
 ## Prerequisites
 
 - Android device
-- [Termux](https://f-droid.org/packages/com.termux/) (install from F-Droid, not Play Store)
-- [NZBGet for Android](https://play.google.com/store/apps/details?id=com.greatlancergames.nzbget)
-- [Emby Server for Android](https://play.google.com/store/apps/details?id=mediabrowser.server.android)
 - Trakt.tv account
 - NZBGeek account
 
 ## Android Media Server Setup
 
-1. Install Emby Server:
-   - Install from website
+1. Install and configure Emby Server:
+   - Install from [website](https://emby.media/server-android.html)
    - Launch and follow initial setup
    - Add your media folders (e.g., /storage/emulated/0/TV Shows)
    - Create admin account
-   - Configure remote access if needed
 
-2. Install and Configure NZBGet:
-   - Install in Termux
-   - Launch and note the web interface port (default: 6789)
+2. Install Termux from [Play Store](https://play.google.com/store/apps/details?id=com.termux)
+   
+3. Install and Configure NZBGet:
+   - Install via Termux: `pkg install nzbget`
+   - Run via Termux: `nzbget -D`
    - Access web interface at http://localhost:6789
-   - Default login: nzbget/tegbzn6789
    - Configure news server settings
-   - Set download path (e.g., /storage/emulated/0/TV Shows - Unorganized)
+   - Configure categories, particularly the path for Series (e.g., `/storage/emulated/0/TV Shows - Unorganized`)
 
 ## Traktarr Installation
 
-1. Install Termux from Play Store
-
-2. Install required packages in Termux:
-    pkg update
-    pkg install python git
+1. Install required packages in Termux:
+   ```sh
+   pkg update
+   pkg install python git
+   ```
 
 3. Clone the repository:
-    git clone https://github.com/bluelight773/traktarr.git
-    cd traktarr
+   ```sh
+   git clone https://github.com/bluelight773/traktarr.git
+   cd traktarr
+   ```
 
 4. Install Python requirements:
-    pip install -r requirements.txt
+   ```sh
+   pip install -r requirements.txt
+   ```
 
 ## Configuration
 
 1. Set up configuration files:
-    cp settings.default.yaml settings.local.yaml
+   ```sh
+   cp settings.default.yaml settings.local.yaml
+   ```
 
-2. Edit settings.local.yaml with your personal settings:
+3. Edit settings.local.yaml with your personal settings:
    - Do NOT modify settings.default.yaml directly
-   - settings.default.yaml will be overwritten by updates
+   - `settings.default.yaml` will be overwritten by updates
 
-3. Required settings to configure:
+4. Required settings to configure:
 
-   - TRAKT_CLIENT_ID: Get from trakt.tv/oauth/applications
-     - Create new application
-     - Set name (e.g., "Traktarr")
-     - Set redirect URI to http://localhost
+   - `TRAKT_CLIENT_ID` and `TRAKT_CLIENT_SECRET`:
+     - Go to https://trakt.tv/oauth/applications
+     - Click New Application
+     - Set name to `Traktarr` followed by some number so that it's available.
+     - Set description to `A lightweight, Trakt-based media automation solution designed to run on Android through Termux.`
+     - Set Redirect:uri to `urn:ietf:wg:oauth:2.0:oob`
+     - Leave everything else as is
+     - Click Save App
+     - You should see the values to use for `TRAKT_CLIENT_ID` and `TRAKT_CLIENT_SECRET`
      
-   - TRAKT_ACCESS_TOKEN: Generate using Trakt OAuth
-     - Use the provided client ID
-     - Follow Trakt OAuth documentation
+   - `TRAKT_ACCESS_TOKEN`:
+     - `cd` to `traktarr/src` directory in Termux: `cd traktarr/src`
+     - Run `python trakt_authorizer.py`
+     - Follow instructions to obtain the value for `TRAKT_ACCESS_TOKEN`
      
-   - NZBGEEK_API_KEY: Get from nzbgeek.info
-     - Found in account settings
-
-4. Configure paths in settings.local.yaml:
-   - UNORGANIZED_TV_SHOWS_PATH: Where NZBGet downloads files
-   - MEDIA_LIBRARY_TV_SHOWS_PATH: Where Emby looks for media
+   - `NZBGEEK_API_KEY`: Get from [nzbgeek.info](https://nzbgeek.info/) > My Account
+       
+   - `UNORGANIZED_TV_SHOWS_PATH`: Where NZBGet downloads files categories as Series
+     
+   - `MEDIA_LIBRARY_TV_SHOWS_PATH`: Where Emby looks for TV show media
 
 ## Usage
 
 ### Manual Run
 
-Run these commands in Termux:
+Run these commands in Termux given you are within the `traktarr` directory:
 
     python src/downloader.py  # Check and download new episodes
     python src/organizer.py   # Organize downloaded files
 
 ### Automated Setup with Cron in Termux
 
-1. Install cronie in Termux:
-    pkg install cronie
-
-2. Start the cron daemon:
-    crond
-
-3. Edit crontab:
-    crontab -e
-
-4. Add these lines:
+1. Install `cronie` in Termux:
+   ```sh
+   pkg install cronie
    ```
-   # Check for new episodes every 4 hours
-   0 */4 * * * cd ~/traktarr && python src/downloader.py
-   # Organize files every hour
-   0 * * * * cd ~/traktarr && python src/organizer.py
+
+3. Start the cron daemon:
+   crond
+
+4. Edit crontab:
+   ```sh
+   crontab -e
+   ```
+
+6. Add these lines to make `downloader.py` run every hour at the top of the hour and to make `organizer.py` run every hour at the 30-minute mark:
+   ```
+   0 * * * * /data/data/com.termux/files/usr/bin/python3 /data/data/com.termux/files/home/traktarr/src/downloader.py >> /data/data/com.termux/files/home/downloader.log 2>&1
+   30 * * * * /data/data/com.termux/files/usr/bin/python3 /data/data/com.termux/files/home/traktarr/src/organizer.py >> /data/data/com.termux/files/home/organizer.log 2>&1
    ```
 
 ## How It Works
 
 1. downloader.py:
    - Checks your Trakt collection
-   - Finds unwatched episodes
+   - Finds the next 2 unwatched episodes relative to your last watched episode
    - Searches NZBGeek for matching releases
-   - Sends downloads to NZBGet
+   - Sends download to NZBGet
 
 2. organizer.py:
    - Monitors download directory
@@ -120,7 +130,7 @@ Run these commands in Termux:
    - Moves files to correct show/season folders
    - Names files according to Emby conventions
 
-## Roadmap
+## Potential future features
 
 - [ ] Movie support
 - [ ] Torrent support via Transmission
@@ -130,7 +140,7 @@ Run these commands in Termux:
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions and forks are welcome!
 
 ## License
 
