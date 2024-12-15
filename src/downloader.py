@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 from config import settings
 from utils import (
     normalize_name, is_similar, get_shows_in_collection,
-    get_last_watched_and_next_episodes
+    get_last_watched_and_next_episodes, extract_show_info, shows_match
 )
 
 class ShowDownloader:
@@ -76,18 +76,16 @@ class ShowDownloader:
                 if status in ["DELETED", "FAILED"]:
                     continue
 
-                # Use the same pattern matching logic used elsewhere
-                match = re.search(r"(.+?)\.S(\d{2})E(\d{2})", filename)
-                if match:
-                    show_name, season, episode = match.groups()
-                    show_name = show_name.replace(".", " ").strip()
+                info = extract_show_info(filename)
+                if info:
+                    show_name, season, episode = info
                     active_downloads.append({
                         'show_name': show_name,
-                        'season': int(season),
-                        'episode': int(episode),
+                        'season': season,
+                        'episode': episode,
                         'full_name': filename
                     })
-                    print(f"Extracted: Show='{show_name}', S{season}E{episode}")
+                    print(f"Extracted: Show='{show_name}', S{season:02}E{episode:02}")
             
             return active_downloads
             
@@ -108,50 +106,51 @@ class ShowDownloader:
         for download in active_downloads:
             if (download['season'] == season and 
                 download['episode'] == episode and 
-                is_similar(normalize_name(show_name), 
-                         normalize_name(download['show_name']))[0]):
+                shows_match(show_name, download['show_name'])):
                 print(f"Episode is being downloaded: {download['full_name']}")
                 return True
-                    
+                        
         # Check organized TV Shows folder
         organized_path = settings['MEDIA_LIBRARY_TV_SHOWS_PATH']
         print(f"Checking organized folder: {organized_path}")
         
-        # First, try to find the show folder
-        show_pattern = f"{show_name}"
-        if "(" in show_name:  # Handle shows with year
-            show_pattern = show_name.split(" (")[0]
-            
-        for show_dir in os.listdir(organized_path):
-            if show_pattern in show_dir:
-                show_path = os.path.join(organized_path, show_dir)
-                if os.path.isdir(show_path):
-                    season_path = os.path.join(show_path, f"Season {season:02}")
-                    if os.path.exists(season_path):
-                        for file in os.listdir(season_path):
-                            if not file.endswith((".mkv", ".mp4", ".avi")):
-                                continue
-                            
-                            # Extract episode number
-                            ep_match = re.search(rf"S{season:02}E{episode:02}", file)
-                            if ep_match:
-                                print(f"Episode found in organized folder: {file}")
-                                return True
+        for root, _, files in os.walk(organized_path):
+            for file in files:
+                if not file.endswith((".mkv", ".mp4", ".avi")):
+                    continue
+                    
+                info = extract_show_info(file)
+                if not info:
+                    continue
+                    
+                file_show, file_season, file_episode = info
+                if (file_season == season and 
+                    file_episode == episode and 
+                    shows_match(show_name, file_show)):
+                    print(f"Episode found in organized folder: {file}")
+                    return True
 
         # Check unorganized TV Shows folder
         unorganized_path = settings['UNORGANIZED_TV_SHOWS_PATH']
         print(f"Checking unorganized folder: {unorganized_path}")
         for item in os.listdir(unorganized_path):
-            full_path = os.path.join(unorganized_path, item)
-            if os.path.isdir(full_path):
-                # Extract show name and episode info from folder name
-                match = re.search(rf"S{season:02}E{episode:02}", item)
-                if match and normalize_name(show_pattern) in normalize_name(item):
-                    print(f"Episode found in unorganized folder: {item}")
-                    return True
+            if not os.path.isdir(os.path.join(unorganized_path, item)):
+                continue
+                
+            info = extract_show_info(item)
+            if not info:
+                continue
+                
+            folder_show, folder_season, folder_episode = info
+            if (folder_season == season and 
+                folder_episode == episode and 
+                shows_match(show_name, folder_show)):
+                print(f"Episode found in unorganized folder: {item}")
+                return True
 
         print(f"Episode not found: {show_name} S{season:02}E{episode:02}")
         return False
+
 
     def process_show(self, show):
         """Process a single show"""

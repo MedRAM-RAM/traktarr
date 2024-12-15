@@ -3,9 +3,10 @@ import time
 from config import settings
 
 # Configuration
-TRAKT_CLIENT_ID = settings['TRAKT_CLIENT_ID']
-TRAKT_CLIENT_SECRET = settings['TRAKT_CLIENT_SECRET']
+TRAKT_CLIENT_ID = settings["TRAKT_CLIENT_ID"]
+TRAKT_CLIENT_SECRET = settings["TRAKT_CLIENT_SECRET"]
 BASE_URL = "https://api.trakt.tv"
+
 
 # Step 1: Request Device Code and User Code
 def get_device_code():
@@ -20,6 +21,7 @@ def get_device_code():
     else:
         print(f"Error: {response.status_code} - {response.text}")
         return None
+
 
 # Step 2: Poll for Access Token
 def poll_for_access_token(device_code):
@@ -52,6 +54,7 @@ def poll_for_access_token(device_code):
         time.sleep(5)  # Poll interval recommended by Trakt API
 
     return None
+
 
 if __name__ == "__main__":
     # Step 1: Get Device Code and User Code
