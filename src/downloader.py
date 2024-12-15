@@ -14,7 +14,9 @@ class ShowDownloader:
         self.nzbget_url = settings['NZBGET_URL']
         self.nzbget_username = settings['NZBGET_USERNAME']
         self.nzbget_password = settings['NZBGET_PASSWORD']
-        self.nzbgeek_api_key = settings['NZBGEEK_API_KEY']
+        self.indexers = [idx for idx in settings['INDEXERS'] 
+                        if idx['enabled'] and idx['api_key']]
+        self.indexers.sort(key=lambda x: x.get('priority', 999))
         self.resolutions = settings['RESOLUTIONS']
         self.max_results = 50
 
@@ -177,13 +179,22 @@ class ShowDownloader:
                 if self.find_and_download_episode(show_name, season, episode, resolution):
                     break
 
-    def search_nzbgeek(self, normalized_query):
-        """Search NZBGeek for a query"""
-        print(f"\nSearching for (Normalized): {normalized_query}")
-        url = f"https://api.nzbgeek.info/api?t=search&q={normalized_query}&apikey={self.nzbgeek_api_key}"
-        response = requests.get(url)
-        response.raise_for_status()
-        return response.text
+    def search_indexer(self, indexer, normalized_query):
+        """Search a single indexer for a query"""
+        print(f"\nSearching {indexer['name']} for: {normalized_query}")
+        url = f"{indexer['url']}"
+        params = {
+            't': 'search',
+            'q': normalized_query,
+            'apikey': indexer['api_key']
+        }
+        try:
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+            return response.text
+        except Exception as e:
+            print(f"Error searching {indexer['name']}: {e}")
+            return None
 
     def parse_nzbgeek_results(self, xml_data):
         """Parse NZBGeek XML results"""
@@ -240,7 +251,6 @@ class ShowDownloader:
     def find_and_download_episode(self, show_name, season, episode, resolution):
         """Search for and download a specific episode"""
         normalized_query = f"{normalize_name(show_name)} S{season:02}E{episode:02} {resolution}"
-        results = self.parse_nzbgeek_results(self.search_nzbgeek(normalized_query))
 
         # Check active downloads first
         active_downloads = self._get_nzbget_active_downloads()
@@ -252,17 +262,31 @@ class ShowDownloader:
                 print(f"Skipping - episode already downloading: {download['full_name']}")
                 return True
 
-        for nzb_data in results:
-            nzb_title = nzb_data["title"]
-            similar, _ = is_similar(normalize_name(show_name), 
-                                  normalize_name(nzb_title.split('.S')[0]))
+        # Try each enabled indexer in priority order
+        for indexer in self.indexers:
+            print(f"\nTrying indexer: {indexer['name']}")
+            xml_data = self.search_indexer(indexer, normalized_query)
             
-            if similar:
-                print(f"Found matching release: {nzb_title}")
-                nzb_content = requests.get(nzb_data["nzb_url"]).content
-                if self.send_to_nzbget(nzb_title + ".nzb", nzb_content):
-                    return True
-        
+            if not xml_data:
+                continue
+                
+            results = self.parse_nzbgeek_results(xml_data)  # Can keep same parser as it's standard Newznab XML
+
+            for nzb_data in results:
+                nzb_title = nzb_data["title"]
+                similar, _ = is_similar(normalize_name(show_name), 
+                                      normalize_name(nzb_title.split('.S')[0]))
+                
+                if similar:
+                    print(f"Found matching release on {indexer['name']}: {nzb_title}")
+                    try:
+                        nzb_content = requests.get(nzb_data["nzb_url"]).content
+                        if self.send_to_nzbget(nzb_title + ".nzb", nzb_content):
+                            return True
+                    except Exception as e:
+                        print(f"Error downloading from {indexer['name']}: {e}")
+                        continue
+
         return False
 
     def run(self):

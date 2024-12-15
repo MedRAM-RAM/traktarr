@@ -3,13 +3,49 @@
 
 # The path where your download client places new TV show downloads
 # This should match the path configured in NZBGet for Series category
-UNORGANIZED_TV_SHOWS_PATH: "/path/to/TV Shows - Unorganized"
+UNORGANIZED_TV_SHOWS_PATH: "/storage/emulated/0/TV Shows - Unorganized"
 # The path where your organized TV shows should be stored
 # This should match the TV Shows library path in your Emby media server
-MEDIA_LIBRARY_TV_SHOWS_PATH: "/path/to/TV Shows"
+MEDIA_LIBRARY_TV_SHOWS_PATH: "/storage/emulated/0/TV Shows"
 
-# Get your API key from nzbgeek.info
-NZBGEEK_API_KEY: ""
+# Indexer Settings
+INDEXERS:
+  - name: "NZBGeek"
+    url: "https://api.nzbgeek.info/api"
+    api_key: ""
+    priority: 1
+    enabled: true
+  - name: "Drunkenslug"
+    url: "https://drunkenslug.com/api"
+    api_key: ""
+    priority: 2
+    enabled: false
+  - name: "abNZB"
+    url: "https://abnzb.com/api"
+    api_key: ""
+    priority: 3
+    enabled: false
+  - name: "altHub"
+    url: "https://api.althub.co.za/api"
+    api_key: ""
+    priority: 4
+    enabled: false
+  - name: "Digital Carnage"
+    url: "https://www.digitalcarnage.info/api"
+    api_key: ""
+    priority: 5
+    enabled: false
+  - name: "NZBFinder"
+    url: "https://nzbfinder.ws/api/v1/api"
+    api_key: ""
+    priority: 6
+    enabled: false
+  - name: "Usenet-Crawler"
+    url: "https://www.usenet-crawler.com/api"
+    api_key: ""
+    priority: 7
+    enabled: false
+  # More indexers can be added here
 
 NZBGET_URL: "http://localhost:6789/jsonrpc"
 NZBGET_USERNAME: "nzbget"

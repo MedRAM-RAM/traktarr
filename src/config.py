@@ -23,11 +23,25 @@ def load_settings() -> Dict:
     settings['UNORGANIZED_TV_SHOWS_PATH'] = os.path.expanduser(settings['UNORGANIZED_TV_SHOWS_PATH'])
 
     # Validate required settings
-    required_settings = ['TRAKT_CLIENT_ID', 'TRAKT_ACCESS_TOKEN', 'NZBGEEK_API_KEY']
+    required_settings = [
+        'TRAKT_CLIENT_ID', 
+        'TRAKT_ACCESS_TOKEN', 
+        'NZBGET_URL',
+        'NZBGET_USERNAME',
+        'NZBGET_PASSWORD',
+        'INDEXERS'
+    ]
+    
     missing_settings = [s for s in required_settings if not settings.get(s)]
     if missing_settings:
         raise ValueError(f"Missing required settings: {', '.join(missing_settings)}\n"
                         f"Please add them to settings.local.yaml")
+
+    # Validate that at least one indexer is properly configured
+    if not any(idx.get('enabled', False) and idx.get('api_key') 
+              for idx in settings.get('INDEXERS', [])):
+        raise ValueError("No enabled indexers with API keys found in settings.\n"
+                        "Please configure at least one indexer in settings.local.yaml")
 
     return settings
 

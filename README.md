@@ -14,7 +14,7 @@ A lightweight, Trakt-based media automation solution designed to run on Android 
 
 - Android device
 - Trakt.tv account
-- NZBGeek account
+- Account with at least one Usenet indexer (e.g., NZBGeek, Drunkenslug, etc.)
 
 ## Android Media Server Setup
 
@@ -81,8 +81,17 @@ A lightweight, Trakt-based media automation solution designed to run on Android 
      - Run `python trakt_authorizer.py`
      - Follow instructions to obtain the value for `TRAKT_ACCESS_TOKEN`
      
-   - `NZBGEEK_API_KEY`: Get from [nzbgeek.info](https://nzbgeek.info/) > My Account
-       
+   - Configure at least one indexer under `INDEXERS`:
+     ```yaml
+     INDEXERS:
+       - name: "YourIndexer"
+         url: "https://api.yourindexer.com/api"  # Your indexer's API endpoint
+         api_key: "your_api_key_here"            # Get from indexer's website
+         priority: 1                             # Lower number = higher priority
+         enabled: true
+     ```
+     You can add multiple indexers; they'll be searched in priority order until a match is found
+
    - `UNORGANIZED_TV_SHOWS_PATH`: Where NZBGet downloads files categories as Series
      
    - `MEDIA_LIBRARY_TV_SHOWS_PATH`: Where Emby looks for TV show media
@@ -111,32 +120,38 @@ Run these commands in Termux given you are within the `traktarr` directory:
    crontab -e
    ```
 
-6. Add these lines to make `downloader.py` run every hour at the top of the hour and to make `organizer.py` run every hour at the 30-minute mark:
+5. Add these lines to run downloader.py every 20 minutes starting at the top of the hour and organizer.py every 20 minutes starting at the 10-minute mark:
    ```
-   0 * * * * /data/data/com.termux/files/usr/bin/python3 /data/data/com.termux/files/home/traktarr/src/downloader.py >> /data/data/com.termux/files/home/downloader.log 2>&1
-   30 * * * * /data/data/com.termux/files/usr/bin/python3 /data/data/com.termux/files/home/traktarr/src/organizer.py >> /data/data/com.termux/files/home/organizer.log 2>&1
+   0,20,40 * * * * /data/data/com.termux/files/usr/bin/python3 /data/data/com.termux/files/home/traktarr/src/downloader.py >> /data/data/com.termux/files/home/downloader.log 2>&1
+   10,30,50 * * * * /data/data/com.termux/files/usr/bin/python3 /data/data/com.termux/files/home/traktarr/src/organizer.py >> /data/data/com.termux/files/home/organizer.log 2>&1
    ```
+
+   This schedule ensures new episodes are downloaded and organized promptly, making the next episode always ready when you finish watching one.
 
 ## How It Works
 
 1. downloader.py:
    - Checks your Trakt collection
    - Finds the next 2 unwatched episodes relative to your last watched episode
-   - Searches NZBGeek for matching releases
-   - Sends download to NZBGet
+   - Searches configured Usenet indexers (in priority order) for matching releases
+   - Sends downloads to NZBGet
+   - Runs every 20 minutes to ensure next episodes are always ready
 
 2. organizer.py:
    - Monitors download directory
    - Organizes completed downloads
    - Moves files to correct show/season folders
    - Names files according to Emby conventions
+   - Automatically removes episodes beyond the next 2 unwatched
+   - Helps maintain minimal storage usage on device
+   - Runs every 20 minutes to ensure timely organization
 
 ## Potential future features
 
+- [X] Multiple indexer support
 - [ ] Movie support
 - [ ] Torrent support via Transmission
 - [ ] Quality control options
-- [ ] Multiple indexer support
 - [ ] Web interface
 
 ## Contributing
