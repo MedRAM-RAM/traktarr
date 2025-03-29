@@ -229,3 +229,13 @@ def find_best_show_match(test_name, shows):
 
     print(f"No match found with score >= 0.8 (best was: {best_score:.2f})")
     return None
+
+def get_imdb_id_from_trakt(show_slug):
+  """Get IMDb ID from Trakt API"""
+    url = f"https://api.trakt.tv/shows/{show_slug}"
+  response = requests.get(url, headers=HEADERS)
+    
+    if response.status_code == 200:
+        imdb_id = response.json().get('ids', {}).get('imdb', '')
+        return imdb_id.replace('tt', '') if imdb_id else None
+    return None
